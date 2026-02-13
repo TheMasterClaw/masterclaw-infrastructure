@@ -1,0 +1,56 @@
+version: '3.8'
+
+# Development override - extends docker-compose.dev.yml
+# Run with: docker-compose -f docker-compose.dev.yml -f docker-compose.override.yml up
+
+services:
+  backend:
+    volumes:
+      # Mount local code for hot reload
+      - ./services/backend/src:/app/src:ro
+      - ./services/backend/schema.sql:/app/schema.sql:ro
+    environment:
+      - NODE_ENV=development
+      - DEBUG=masterclaw:*
+      - LOG_LEVEL=debug
+    ports:
+      - "9229:9229"  # Node debugger
+
+  core:
+    volumes:
+      - ./services/core/masterclaw_core:/app/masterclaw_core:ro
+    environment:
+      - LOG_LEVEL=debug
+      - RELOAD=true
+    ports:
+      - "5678:5678"  # Python debugger
+
+  # Add pgAdmin for database inspection (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: mc-pgadmin-dev
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@masterclaw.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - masterclaw-dev-network
+
+  # Add Redis for caching/sessions
+  redis:
+    image: redis:7-alpine
+    container_name: mc-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - masterclaw-dev-network
+
+volumes:
+  pgadmin-data:
+  redis-data:
