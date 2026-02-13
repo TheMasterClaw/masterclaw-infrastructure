@@ -1,121 +1,178 @@
-# MasterClaw Infrastructure
+# MasterClaw Ecosystem 🐾
 
-## 🚀 Quick Start
+**The complete AI familiar infrastructure built for Rex deus.**
 
+## Overview
+
+This repository contains the deployment infrastructure. For the complete ecosystem, see:
+
+| Repository | Purpose | Status |
+|-----------|---------|--------|
+| [MasterClawInterface](https://github.com/TheMasterClaw/MasterClawInterface) | React frontend | ✅ Active |
+| [masterclaw-core](https://github.com/TheMasterClaw/masterclaw-core) | AI brain (FastAPI) | ✅ Active |
+| [masterclaw-tools](https://github.com/TheMasterClaw/masterclaw-tools) | CLI utilities | ✅ Active |
+| [rex-deus](https://github.com/TheMasterClaw/rex-deus) | Personal configs 🔒 | ✅ Active |
+| [level100-studios](https://github.com/TheMasterClaw/level100-studios) | Design system | ✅ Active |
+| **masterclaw-infrastructure** | **Deployment** | **✅ Active** |
+
+## Quick Start
+
+### One-Line Install
 ```bash
-# 1. Clone and enter
+curl -fsSL https://raw.githubusercontent.com/TheMasterClaw/masterclaw-infrastructure/main/scripts/install.sh | sudo bash
+```
+
+### Manual Setup
+```bash
+# Clone
 git clone https://github.com/TheMasterClaw/masterclaw-infrastructure.git
 cd masterclaw-infrastructure
 
-# 2. Configure environment
+# Configure
 cp .env.example .env
-# Edit .env with your domain and tokens
+# Edit .env with your settings
 
-# 3. Deploy
-./scripts/deploy.sh
-
-# 4. Check health
-./scripts/health-check.sh
+# Deploy
+make prod
+# or: ./scripts/deploy.sh
 ```
 
-## 📁 Structure
+## Commands
 
-```
-.
-├── docker-compose.yml          # Production stack
-├── docker-compose.dev.yml      # Development stack
-├── .env.example                # Configuration template
-├── scripts/
-│   ├── deploy.sh              # Deploy to production
-│   ├── backup.sh              # Backup all data
-│   ├── restore.sh             # Restore from backup
-│   ├── setup.sh               # Initial server setup
-│   └── health-check.sh        # Check service health
-└── services/
-    ├── interface/             # Frontend Dockerfile
-    ├── backend/               # Backend Dockerfile
-    └── core/                  # AI Core Dockerfile
+Use the Makefile for common operations:
+
+```bash
+make dev      # Start development environment
+make prod     # Deploy production
+make status   # Check health
+make backup   # Create backup
+make restore  # Restore from backup
+make logs     # View logs
+make test     # Run tests
+make monitor  # Start monitoring stack
 ```
 
-## 🏗️ Services
+## Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│              Traefik (SSL/Proxy)            │
+├─────────────────────────────────────────────┤
+│  Interface │  Backend API  │  AI Core      │
+│  (React)   │  (Node.js)    │  (Python)     │
+├─────────────────────────────────────────────┤
+│  Gateway   │  ChromaDB     │  SQLite/Redis │
+│ (OpenClaw) │  (Vectors)    │  (Data)       │
+├─────────────────────────────────────────────┤
+│        Prometheus + Grafana (Monitoring)    │
+└─────────────────────────────────────────────┘
+```
+
+## Services
 
 | Service | Port | Description |
 |---------|------|-------------|
-| Traefik | 80, 443 | Reverse proxy with SSL |
-| Interface | 80 | React frontend |
-| Backend | 3001 | Node.js API |
-| Core | 8000 | Python AI brain |
-| Gateway | 3000 | OpenClaw gateway |
-| Chroma | - | Vector database |
+| Interface | 80/443 | React frontend |
+| Backend API | 3001 | REST API |
+| AI Core | 8000 | FastAPI + LLM routing |
+| Gateway | 3000 | OpenClaw connection |
+| ChromaDB | - | Vector database |
+| Prometheus | 9090 | Metrics |
+| Grafana | 3003 | Dashboards |
 
-## 🔧 Scripts
+## Directory Structure
 
-### Deploy
-```bash
-./scripts/deploy.sh
 ```
-Deploys the full stack with SSL certificates.
-
-### Backup
-```bash
-./scripts/backup.sh
-# Or with custom retention
-BACKUP_DIR=/backups RETENTION_DAYS=30 ./scripts/backup.sh
+.
+├── docker-compose.yml              # Production stack
+├── docker-compose.dev.yml          # Development stack
+├── docker-compose.monitoring.yml   # Monitoring stack
+├── docker-compose.override.yml     # Dev overrides
+├── Makefile                        # Common commands
+├── scripts/                        # Automation scripts
+│   ├── install.sh                 # One-line installer
+│   ├── deploy.sh                  # Production deploy
+│   ├── backup.sh                  # Backup data
+│   ├── restore.sh                 # Restore data
+│   ├── test.sh                    # Run tests
+│   ├── migrate.sh                 # DB migrations
+│   ├── health-check.sh            # Health check
+│   ├── setup.sh                   # Server setup
+│   └── uninstall.sh               # Remove everything
+├── services/                       # Service definitions
+│   ├── interface/                 # Frontend Dockerfile
+│   ├── backend/                   # Backend Dockerfile
+│   └── core/                      # AI Core Dockerfile
+├── monitoring/                     # Prometheus/Grafana config
+└── docs/                          # Documentation
 ```
 
-### Restore
+## Monitoring
+
+Start monitoring stack:
 ```bash
-./scripts/restore.sh
+make monitor
 ```
-Interactive restore from backup archives.
 
-### Health Check
+Access dashboards:
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3003 (admin/admin)
+
+## Backup & Recovery
+
+**Create backup:**
 ```bash
-./scripts/health-check.sh
+make backup
+# or: ./scripts/backup.sh
 ```
-Checks all services and endpoints.
 
-### Setup (new server)
+**Restore:**
 ```bash
-./scripts/setup.sh
+make restore
+# or: ./scripts/restore.sh
 ```
-Installs Docker, Docker Compose, and configures firewall.
 
-## 🌐 Domains
+Backups are stored in `./backups/` with automatic rotation.
 
-After deployment, access your services at:
+## Development
 
-- **Interface**: https://mc.yourdomain.com
-- **API**: https://api.mc.yourdomain.com
-- **Gateway**: https://gateway.mc.yourdomain.com
-- **Core**: https://core.mc.yourdomain.com
-- **Traefik Dashboard**: https://traefik.mc.yourdomain.com
-
-## 🔄 Development
+See [docs/development.md](./docs/development.md) for detailed development guide.
 
 ```bash
-# Start development stack
-docker-compose -f docker-compose.dev.yml up -d
+# Start dev environment
+make dev
+
+# Run tests
+make test
 
 # View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
+make logs ARGS="-f mc-backend"
 ```
 
-## 🔒 Security
+## Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DOMAIN` | ✅ | Your domain name |
+| `ACME_EMAIL` | ✅ | For SSL certificates |
+| `GATEWAY_TOKEN` | ✅ | OpenClaw gateway token |
+| `OPENAI_API_KEY` | ⚠️ | For AI features |
+| `ANTHROPIC_API_KEY` | ❌ | Alternative AI provider |
+
+## Security
 
 - Automatic SSL via Let's Encrypt
+- Rate limiting on all endpoints
+- Security headers applied
 - No ports exposed except 80/443
-- Internal networking between services
-- Firewall configured by setup.sh
 
-## 📚 Related
+## Support
 
-- [MasterClawInterface](https://github.com/TheMasterClaw/MasterClawInterface) — The UI
-- [masterclaw-core](https://github.com/TheMasterClaw/masterclaw-core) — AI brain
-- [masterclaw-tools](https://github.com/TheMasterClaw/masterclaw-tools) — CLI
+- CLI: `mc help`
+- Docs: See `docs/` directory
+- Issues: GitHub Issues
 
 ---
 
