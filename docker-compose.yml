@@ -1,68 +1,177 @@
 version: '3.8'
 
 services:
-  # Reverse Proxy with SSL
+  # Traefik Reverse Proxy with SSL
   traefik:
     image: traefik:v3.0
+    container_name: mc-traefik
+    restart: unless-stopped
     command:
-      - "--api.insecure=true"
+      - "--api.insecure=false"
+      - "--api.dashboard=true"
+      - "--ping=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.email=admin@level100studios.com"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@example.com}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--log.level=${TRAEFIK_LOG_LEVEL:-INFO}"
+      - "--accesslog=true"
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./letsencrypt:/letsencrypt
+      - ./data/letsencrypt:/letsencrypt
     networks:
       - masterclaw-network
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=auth@file"
 
   # MasterClaw Interface (Frontend)
   interface:
     build:
-      context: ../MasterClawInterface/frontend
+      context: ./services/interface
       dockerfile: Dockerfile
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.interface.rule=Host(`mc.yourdomain.com`)"
-      - "traefik.http.routers.interface.tls.certresolver=letsencrypt"
+    container_name: mc-interface
+    restart: unless-stopped
     environment:
-      - VITE_API_URL=http://backend:3001
-      - VITE_GATEWAY_URL=http://gateway:3000
+      - VITE_API_URL=https://api.${DOMAIN:-localhost}
+      - VITE_GATEWAY_URL=https://gateway.${DOMAIN:-localhost}
     networks:
       - masterclaw-network
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.interface.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.interface.tls.certresolver=letsencrypt"
+      - "traefik.http.services.interface.loadbalancer.server.port=80"
 
   # MasterClaw Backend (API)
   backend:
     build:
-      context: ../MasterClawInterface/backend
+      context: ./services/backend
       dockerfile: Dockerfile
+    container_name: mc-backend
+    restart: unless-stopped
     environment:
       - PORT=3001
       - NODE_ENV=production
       - OPENCLAW_GATEWAY_URL=http://gateway:3000
+      - DATABASE_PATH=/data/mc.db
     volumes:
-      - ./data:/app/data
+      - ./data/backend:/data
     networks:
       - masterclaw-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=3001"
+
+  # MasterClaw Core (AI Brain)
+  core:
+    build:
+      context: ./services/core
+      dockerfile: Dockerfile
+    container_name: mc-core
+    restart: unless-stopped
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MEMORY_BACKEND=chroma
+      - CHROMA_PERSIST_DIR=/data/chroma
+    volumes:
+      - ./data/core:/data
+    networks:
+      - masterclaw-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.core.rule=Host(`core.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.core.tls.certresolver=letsencrypt"
+      - "traefik.http.services.core.loadbalancer.server.port=8000"
 
   # OpenClaw Gateway
   gateway:
     image: openclaw/gateway:latest
+    container_name: mc-gateway
+    restart: unless-stopped
     environment:
       - PORT=3000
       - GATEWAY_TOKEN=${GATEWAY_TOKEN}
+      - DATABASE_URL=/data/gateway.db
     volumes:
-      - ./gateway-data:/data
+      - ./data/gateway:/data
+    networks:
+      - masterclaw-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gateway.rule=Host(`gateway.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.gateway.tls.certresolver=letsencrypt"
+      - "traefik.http.services.gateway.loadbalancer.server.port=3000"
+
+  # ChromaDB (Vector Database for Memory)
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: mc-chroma
+    restart: unless-stopped
+    volumes:
+      - ./data/chroma:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - masterclaw-network
+    labels:
+      - "traefik.enable=false"
+
+  # Watchtower (Auto-updates)
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: mc-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_REVIVE_STOPPED=true
+    command: --interval 3600 mc-interface mc-backend mc-core mc-gateway
     networks:
       - masterclaw-network
 
 networks:
   masterclaw-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

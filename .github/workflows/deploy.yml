@@ -1,0 +1,73 @@
+name: Deploy MasterClaw
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Interface
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/interface
+          push: true
+          tags: |
+            ghcr.io/themasterclaw/masterclaw-interface:latest
+            ghcr.io/themasterclaw/masterclaw-interface:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/backend
+          push: true
+          tags: |
+            ghcr.io/themasterclaw/masterclaw-backend:latest
+            ghcr.io/themasterclaw/masterclaw-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Core
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/core
+          push: true
+          tags: |
+            ghcr.io/themasterclaw/masterclaw-core:latest
+            ghcr.io/themasterclaw/masterclaw-core:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd /opt/masterclaw-infrastructure
+            git pull origin main
+            docker-compose pull
+            docker-compose up -d
+            ./scripts/health-check.sh
