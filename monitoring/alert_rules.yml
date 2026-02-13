@@ -45,3 +45,30 @@ groups:
         annotations:
           summary: "High response time"
           description: "95th percentile response time is above 5s"
+
+      - alert: SSLCertificateExpiringSoon
+        expr: masterclaw_ssl_cert_expiry_days < 14 and masterclaw_ssl_cert_expiry_days >= 7
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "Certificate for {{ $labels.domain }} expires in {{ $value }} days"
+
+      - alert: SSLCertificateExpiringCritical
+        expr: masterclaw_ssl_cert_expiry_days < 7 and masterclaw_ssl_cert_expiry_days >= 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SSL certificate expiring critical"
+          description: "Certificate for {{ $labels.domain }} expires in {{ $value }} days - RENEW NOW!"
+
+      - alert: SSLCertificateExpired
+        expr: masterclaw_ssl_cert_expiry_days < 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SSL certificate has expired"
+          description: "Certificate for {{ $labels.domain }} has EXPIRED! Services may be down!"

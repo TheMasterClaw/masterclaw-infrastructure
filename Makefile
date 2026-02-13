@@ -1,4 +1,4 @@
-.PHONY: help install dev prod stop logs logs-status logs-clean status backup restore test clean monitor
+.PHONY: help install dev prod stop logs logs-status logs-clean status backup restore test clean monitor ssl-check
 
 # Default target
 help:
@@ -25,6 +25,7 @@ help:
 	@echo "  make migrate    - Run database migrations"
 	@echo "  make clean      - Remove containers and volumes"
 	@echo "  make uninstall  - Remove MasterClaw completely"
+	@echo "  make ssl-check  - Check SSL certificate expiration"
 
 # Installation
 install:
@@ -110,3 +111,7 @@ monitor:
 logs-query:
 	@echo "📜 Querying logs via Loki..."
 	@./scripts/logs-query.sh $(ARGS)
+
+# Check SSL certificates
+ssl-check:
+	@./scripts/ssl-cert-check.sh check

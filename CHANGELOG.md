@@ -2,6 +2,23 @@
 
 All notable changes to the MasterClaw ecosystem.
 
+## [0.4.0] - 2026-02-13
+
+### Added
+- **SSL Certificate Monitoring** - Prevent production outages from expired certificates
+  - New `scripts/ssl-cert-check.sh` - Check certificate expiration
+  - Prometheus alert rules for certificate expiration (14-day warning, 7-day critical)
+  - New CLI commands: `mc ssl check`, `mc ssl status`, `mc ssl metrics`, `mc ssl renew`
+  - New Makefile target: `make ssl-check`
+  - Supports custom warning/critical thresholds
+  - Automatic detection of all MasterClaw domains (main, api, gateway, core, traefik)
+  - Prometheus metrics output for monitoring integration
+  - Force renewal capability via Traefik restart
+
+### Infrastructure
+- Enhanced Prometheus alerting with SSL certificate expiration rules
+- SSL certificate metrics integration with existing monitoring stack
+
 ## [0.3.0] - 2026-02-13
 
 ### Added
