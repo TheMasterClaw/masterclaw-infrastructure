@@ -42,14 +42,16 @@ make prod
 Use the Makefile for common operations:
 
 ```bash
-make dev      # Start development environment
-make prod     # Deploy production
-make status   # Check health
-make backup   # Create backup
-make restore  # Restore from backup
-make logs     # View logs
-make test     # Run tests
-make monitor  # Start monitoring stack
+make dev          # Start development environment
+make prod         # Deploy production
+make status       # Check health
+make backup       # Create backup
+make restore      # Restore from backup
+make logs         # View logs
+make logs-status  # Show log sizes and rotation
+make logs-clean   # Clean up container logs
+make test         # Run tests
+make monitor      # Start monitoring stack
 ```
 
 ## Architecture
@@ -97,6 +99,7 @@ make monitor  # Start monitoring stack
 │   ├── test.sh                    # Run tests
 │   ├── migrate.sh                 # DB migrations
 │   ├── health-check.sh            # Health check
+│   ├── logs.sh                    # Log management
 │   ├── setup.sh                   # Server setup
 │   └── uninstall.sh               # Remove everything
 ├── services/                       # Service definitions
@@ -117,6 +120,41 @@ make monitor
 Access dashboards:
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3003 (admin/admin)
+
+## Log Management
+
+MasterClaw includes automatic log rotation to prevent disk space issues.
+
+**View log status:**
+```bash
+make logs-status
+# or: ./scripts/logs.sh status
+# or: mc log status
+```
+
+**Clean up logs:**
+```bash
+make logs-clean
+# or: ./scripts/logs.sh clean
+# or: mc log clean
+```
+
+**Export logs:**
+```bash
+./scripts/logs.sh export [service]
+# or: mc log export [service]
+```
+
+Log rotation settings (configured in `docker-compose.yml`):
+| Service | Max Size | Max Files |
+|---------|----------|-----------|
+| traefik | 10MB | 5 |
+| interface | 10MB | 3 |
+| backend | 50MB | 5 |
+| core | 50MB | 5 |
+| gateway | 20MB | 3 |
+| chroma | 10MB | 3 |
+| watchtower | 5MB | 2 |
 
 ## Backup & Recovery
 

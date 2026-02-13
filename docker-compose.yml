@@ -6,6 +6,13 @@ services:
     image: traefik:v3.0
     container_name: mc-traefik
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        labels: "service_name"
+        env: "OS"
     command:
       - "--api.insecure=false"
       - "--api.dashboard=true"
@@ -48,6 +55,12 @@ services:
       dockerfile: Dockerfile
     container_name: mc-interface
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service_name"
     environment:
       - VITE_API_URL=https://api.${DOMAIN:-localhost}
       - VITE_GATEWAY_URL=https://gateway.${DOMAIN:-localhost}
@@ -68,6 +81,12 @@ services:
       dockerfile: Dockerfile
     container_name: mc-backend
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service_name"
     environment:
       - PORT=3001
       - NODE_ENV=production
@@ -96,6 +115,12 @@ services:
       dockerfile: Dockerfile
     container_name: mc-core
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service_name"
     environment:
       - PORT=8000
       - HOST=0.0.0.0
@@ -123,6 +148,12 @@ services:
     image: openclaw/gateway:latest
     container_name: mc-gateway
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+        labels: "service_name"
     environment:
       - PORT=3000
       - GATEWAY_TOKEN=${GATEWAY_TOKEN}
@@ -142,6 +173,12 @@ services:
     image: chromadb/chroma:latest
     container_name: mc-chroma
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service_name"
     volumes:
       - ./data/chroma:/chroma/chroma
     environment:
@@ -158,6 +195,12 @@ services:
     image: containrrr/watchtower:latest
     container_name: mc-watchtower
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+        labels: "service_name"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

@@ -1,4 +1,4 @@
-.PHONY: help install dev prod stop logs status backup restore test clean
+.PHONY: help install dev prod stop logs logs-status logs-clean status backup restore test clean monitor
 
 # Default target
 help:
@@ -12,7 +12,9 @@ help:
 	@echo ""
 	@echo "Operations:"
 	@echo "  make stop       - Stop all services"
-	@echo "  make logs       - View logs (use ARGS="-f" to follow)"
+	@echo "  make logs       - View logs (use ARGS=\"-f\" to follow)"
+	@echo "  make logs-status - Show log sizes and rotation status"
+	@echo "  make logs-clean  - Clean up all container logs"
 	@echo "  make status     - Check service status"
 	@echo "  make backup     - Create backup"
 	@echo "  make restore    - Restore from backup"
@@ -50,6 +52,14 @@ stop:
 # View logs
 logs:
 	@docker-compose logs $(ARGS)
+
+# Log status
+logs-status:
+	@./scripts/logs.sh status
+
+# Clean logs
+logs-clean:
+	@./scripts/logs.sh clean
 
 # Check status
 status:

@@ -2,6 +2,24 @@
 
 All notable changes to the MasterClaw ecosystem.
 
+## [0.2.1] - 2026-02-13
+
+### Added
+- **Log Rotation** - Automatic Docker log rotation to prevent disk space issues
+  - Configured per-service limits (5-50MB, 2-5 files)
+  - New `scripts/logs.sh` for log management
+  - New CLI commands: `mc log status`, `mc log clean`, `mc log export`
+  - New Makefile targets: `make logs-status`, `make logs-clean`
+- **Log Management Features**:
+  - View log sizes and rotation status
+  - Clean up container logs safely
+  - Export logs for debugging
+  - Disk usage warnings
+
+### Infrastructure
+- Added `logging` configuration to all Docker Compose services
+- Prevents production outages from runaway logs
+
 ## [0.2.0] - 2026-02-13
 
 ### Added
