@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Reverse Proxy with SSL
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@level100studios.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    networks:
+      - masterclaw-network
+
+  # MasterClaw Interface (Frontend)
+  interface:
+    build:
+      context: ../MasterClawInterface/frontend
+      dockerfile: Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.interface.rule=Host(`mc.yourdomain.com`)"
+      - "traefik.http.routers.interface.tls.certresolver=letsencrypt"
+    environment:
+      - VITE_API_URL=http://backend:3001
+      - VITE_GATEWAY_URL=http://gateway:3000
+    networks:
+      - masterclaw-network
+
+  # MasterClaw Backend (API)
+  backend:
+    build:
+      context: ../MasterClawInterface/backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - OPENCLAW_GATEWAY_URL=http://gateway:3000
+    volumes:
+      - ./data:/app/data
+    networks:
+      - masterclaw-network
+
+  # OpenClaw Gateway
+  gateway:
+    image: openclaw/gateway:latest
+    environment:
+      - PORT=3000
+      - GATEWAY_TOKEN=${GATEWAY_TOKEN}
+    volumes:
+      - ./gateway-data:/data
+    networks:
+      - masterclaw-network
+
+networks:
+  masterclaw-network:
+    driver: bridge
