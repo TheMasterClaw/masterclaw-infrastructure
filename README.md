@@ -66,7 +66,7 @@ make monitor      # Start monitoring stack
 │  Gateway   │  ChromaDB     │  SQLite/Redis │
 │ (OpenClaw) │  (Vectors)    │  (Data)       │
 ├─────────────────────────────────────────────┤
-│        Prometheus + Grafana (Monitoring)    │
+│   Prometheus + Grafana + Loki (Monitoring)  │
 └─────────────────────────────────────────────┘
 ```
 
@@ -79,8 +79,9 @@ make monitor      # Start monitoring stack
 | AI Core | 8000 | FastAPI + LLM routing |
 | Gateway | 3000 | OpenClaw connection |
 | ChromaDB | - | Vector database |
-| Prometheus | 9090 | Metrics |
-| Grafana | 3003 | Dashboards |
+| Prometheus | 9090 | Metrics collection |
+| Grafana | 3003 | Dashboards & visualization |
+| Loki | 3100 | Log aggregation |
 
 ## Directory Structure
 
@@ -120,10 +121,49 @@ make monitor
 Access dashboards:
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3003 (admin/admin)
+- Loki: http://localhost:3100
 
-## Log Management
+## Log Aggregation
 
-MasterClaw includes automatic log rotation to prevent disk space issues.
+MasterClaw includes centralized log aggregation with Loki for searchable, persistent logs.
+
+**Query logs via CLI:**
+```bash
+# Show logs for a specific service
+./scripts/logs-query.sh service mc-core
+
+# Search for errors
+./scripts/logs-query.sh errors --since 24h
+
+# Search with custom LogQL query
+./scripts/logs-query.sh search '{service="mc-core"} |= "error"' --since 1h
+
+# Tail logs in real-time
+./scripts/logs-query.sh tail --service mc-backend
+
+# List available labels
+./scripts/logs-query.sh labels
+```
+
+**Query logs via Grafana:**
+1. Open Grafana at http://localhost:3003
+2. Go to Explore → Select "Loki" datasource
+3. Query examples:
+   - All logs: `{job="docker"}`
+   - Service logs: `{service="mc-core"}`
+   - Error logs: `{job="docker"} |= "error"`
+   - Container logs: `{container_name="mc-backend"}`
+
+**Features:**
+- 30-day log retention
+- Search by service, container, or content
+- Correlate logs with metrics in Grafana
+- Log volume and error rate dashboards
+- Real-time log streaming
+
+## Log Management (Local)
+
+MasterClaw also includes automatic log rotation to prevent disk space issues.
 
 **View log status:**
 ```bash

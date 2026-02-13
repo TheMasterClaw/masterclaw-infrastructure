@@ -1,0 +1,109 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "masterclaw-logs",
+    "title": "MasterClaw Logs",
+    "tags": ["masterclaw", "logs"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Logs Stream",
+        "type": "logs",
+        "targets": [
+          {
+            "expr": "{job=\"docker\"} |= ``",
+            "refId": "A",
+            "datasource": {
+              "type": "loki",
+              "uid": "Loki"
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 16,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "options": {
+          "showTime": true,
+          "wrapLogMessage": true,
+          "sortOrder": "Descending"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Log Volume by Service",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate({job=\"docker\"} [5m])) by (service)",
+            "legendFormat": "{{service}}",
+            "refId": "B",
+            "datasource": {
+              "type": "loki",
+              "uid": "Loki"
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "logs",
+            "min": 0,
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Error Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate({job=\"docker\"} |= \"error\" [5m])) by (service)",
+            "legendFormat": "{{service}} errors",
+            "refId": "C",
+            "datasource": {
+              "type": "loki",
+              "uid": "Loki"
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "logs",
+            "min": 0,
+            "custom": {
+              "drawStyle": "bars",
+              "fillOpacity": 50,
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "red"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

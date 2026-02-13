@@ -104,3 +104,9 @@ monitor:
 	@echo "✅ Monitoring running!"
 	@echo "  Prometheus: http://localhost:9090"
 	@echo "  Grafana: http://localhost:3003"
+	@echo "  Loki: http://localhost:3100"
+
+# Query logs via Loki
+logs-query:
+	@echo "📜 Querying logs via Loki..."
+	@./scripts/logs-query.sh $(ARGS)

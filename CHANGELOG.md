@@ -2,6 +2,31 @@
 
 All notable changes to the MasterClaw ecosystem.
 
+## [0.3.0] - 2026-02-13
+
+### Added
+- **Log Aggregation with Loki** - Centralized, searchable log storage
+  - Grafana Loki for log aggregation and storage
+  - Promtail for container log shipping
+  - 30-day log retention with configurable limits
+  - Integrated with Grafana (datasource + dashboard)
+  - New `scripts/logs-query.sh` for CLI log queries
+  - New Makefile target: `make logs-query`
+  - Query logs by service, time range, or content
+  - Real-time log tailing via CLI
+  - Error log filtering
+  - Log volume visualization in Grafana
+
+### Infrastructure
+- Extended monitoring stack with Loki + Promtail
+- Pre-configured Grafana datasource for Loki
+- New "MasterClaw Logs" dashboard with:
+  - Live log stream viewer
+  - Log volume by service over time
+  - Error rate visualization
+- All MasterClaw container logs automatically collected
+
+
 ## [0.2.1] - 2026-02-13
 
 ### Added
